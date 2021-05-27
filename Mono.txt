@@ -1,0 +1,26 @@
+1:
+因为我们embed的mono主版本是3，而vscode的mono-debug版本为2
+替换目录
+C:\Users\johnsonsong\.vscode\extensions\ms-vscode.mono-debug-0.16.2\bin\Release
+为release压缩文件内容就可以调试
+2:
+因为.net framework的mono embed调试只认mdb不认 pdb
+所以在dll编译结束后，添加post event
+$(SolutionDir)\pdb2mdb\pdb2mdb.exe $(TargetPath)
+产生出来mdb文件为sdb所用
+3:
+mono->InitMonoJIT("C:/Program Files/Mono/lib", "C:/Program Files/Mono/etc", "UEMono", true);
+这里需要指定mono安装目录，这个以后想办法配置出来，或者干脆在工作路径下带上
+auto assembly = mono->LoadAssembly("F:/cherubim/CRBProject/UnrealBinder/UEBinder.Framework/bin/Debug/UEBinder.Framework.dll");
+这里指定Domain加载的dll，项目要根据情况配置
+在UIBinder工程中
+	var binder = new UCppCodeBinder();
+                binder.BuildClass(i.Value, "F:/cherubim/CRBProject/Source/CRBProject/gen/");
+
+                var csbinder = new UCSharpCodeBinder();
+                csbinder.BuildClass(i.Value, "F:/cherubim/CRBProject/Source/CRBProject/gen/");
+指定绑定输出代码目录，这个也应该需要配置
+4:
+产生出来的gen.cs和gen.cpp
+ue4下gen.cpp只要生成在游戏目录会被UBT检测到自动参与编译
+而gen.cs则我们产生了一个共享工程，引用这个共享工程就能编译出来

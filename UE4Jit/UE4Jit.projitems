@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>9d45fd05-e707-4b4f-94e2-3548d23a862c</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>UE4Jit</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Complier.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Executor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExecutorVM.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\Interface.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\VMSwitchInstruction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\WrapperManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Tools\CecilExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Tools\FileVMBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Injector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\AnonymousStorey.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\DataDefine.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\GenericDelegate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\Il2CppSetOptionAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\Instruction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\ObjectClone.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\ReflectionMethodInvoker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\StackOperation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\SwitchFlags.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\Utils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\VirtualMachine.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Core\WrappersManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Tools\CodeTranslator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InjectFix\Src\Tools\GenerateConfigure.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)InjectFix\ThirdParty\Mono.Cecil.dll" />
+    <None Include="$(MSBuildThisFileDirectory)InjectFix\ThirdParty\Mono.Cecil.Mdb.dll" />
+    <None Include="$(MSBuildThisFileDirectory)InjectFix\ThirdParty\Mono.Cecil.Pdb.dll" />
+  </ItemGroup>
+</Project>
