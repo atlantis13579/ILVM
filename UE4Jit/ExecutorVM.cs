@@ -293,7 +293,12 @@ namespace UE4Jit
                 return false;
             }
 
+#if DEBUG
+            string core_path = Directory.GetCurrentDirectory() + "/../../bin/Debug/JitDemo.exe";
+#else
             string core_path = Directory.GetCurrentDirectory() + "/../../bin/Release/JitDemo.exe";
+#endif
+
             AssemblyDefinition assembly_core = AssemblyDefinition.ReadAssembly(core_path, new ReaderParameters { ReadSymbols = true });
 
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(dllName, new ReaderParameters { ReadSymbols = true });

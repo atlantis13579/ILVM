@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+ILVM/x64/*
+UE4Lua/x64/*

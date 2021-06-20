@@ -1,9 +1,19 @@
 #pragma once
 
 #include <cmath>
+#include <exception>
+#include <string>
 
 namespace ILVM
 {
+	struct VMException : public std::exception
+	{
+		std::string s;
+		VMException(const std::string& ss) : s(std::move(ss)) {}
+		~VMException() throw () {}
+		const char* what() const throw() { return s.c_str(); }
+	};
+
 	enum class ECode : int
 	{
 		Nop,
@@ -255,6 +265,11 @@ namespace ILVM
 		return EVarType::Double;
 	}
 
+	struct Instruction
+	{
+		ECode Code;
+		int Operand;
+	};
 
 	struct FStackVariable
 	{
@@ -313,6 +328,23 @@ namespace ILVM
 		void FreeStruct(void* p)
 		{
 			delete p;
+		}
+		static bool GreaterEqual(EVarType type, FStackVariable* lh, FStackVariable* rh)
+		{
+			switch (type)
+			{
+			case EVarType::Integer:
+				return lh->I32Value >= rh->I32Value;
+			case EVarType::Long:
+				return lh->I64Value >= rh->I64Value;
+			case EVarType::Float:
+				return lh->F32Value >= rh->F32Value;
+			case EVarType::Double:
+				return lh->F64Value >= rh->F64Value;
+			default:
+				break;
+			}
+			return false;
 		}
 		static bool LessEqual(EVarType type, FStackVariable* lh, FStackVariable* rh)
 		{
@@ -408,12 +440,32 @@ namespace ILVM
 				break;
 			}
 		}
-	};
-
-	struct Instruction
-	{
-		ECode Code;
-		int Operand;
+		static void ConvI8(FStackVariable** pobj, Instruction** pc)
+		{
+			FStackVariable* obj = *pobj;
+			long val;
+			switch (obj->Type)
+			{
+			case EVarType::Integer:
+				val = obj->Value1;
+				break;
+			case EVarType::Long:
+				*pc++;
+				return;
+			case EVarType::Float:
+				val = (long)*(float*)&obj->Value1;
+				break;
+			case EVarType::Double:
+				val = (long)*(double*)&obj->Value1;
+				break;
+			default:
+				val = 0;
+				throw std::exception("NotImplementedException");
+				break;
+			}
+			obj->Type = EVarType::Long;
+			*(long*)(&obj->Value1) = val;
+		}
 	};
 
 	typedef void* FManagedObject;

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "assert.h"
 #include <set>
+#include <string>
+#include <stdexcept>
 #include "FILVirtualMachine.h"
 
 /*
@@ -156,6 +158,7 @@ namespace ILVM
 				externInvokeFunc(this, ref call, code == Code.Newobj);
 				evaluationStackPointer = call.currentTop;
 				*/
+				assert(false);
 				break;
 			case ECode::Ldloc:
 			{
@@ -209,6 +212,295 @@ namespace ILVM
 				pc += pc->Operand;
 			}
 			continue;
+			case ECode::Pop://0.4614846%
+			{
+				evaluationStackPointer--;
+				managedStack[evaluationStackPointer - evaluationStackBase] = nullptr;
+			}
+			break;
+			case ECode::Bne_Un://Bne_Un_S:0.4565032% Bne_Un:0.02793102%
+			{
+				FStackVariable* b = evaluationStackPointer - 1;
+				FStackVariable* a = evaluationStackPointer - 1 - 1;
+				evaluationStackPointer = a;
+				if (a->Type != b->Type
+					|| ((a->Type == EVarType::Object || a->Type == EVarType::ValueType) ?
+						(managedStack[a->Value1] != managedStack[b->Value1]) :
+						((a->Value1 != b->Value1) || (a->Type != EVarType::Integer
+							&& a->Type != EVarType::Float && a->Value2 != b->Value2))))
+				{
+					pc += pc->Operand;
+					continue;
+				}
+			}
+			break;
+			case ECode::Leave://Leave_S:0.4552579% Leave:0.03220074%
+			{
+				leavePoint = pc->Operand;
+			}
+			break;
+			case ECode::Newarr: //0.4408476%
+			{
+				/*
+				var type = externTypes[pc->Operand];
+				var ptr = evaluationStackPointer - 1;
+				int pos = (int)(ptr - evaluationStackBase);
+				managedStack[pos] = Array.CreateInstance(type, ptr->Value1);
+				ptr->Type = ValueType.Object;
+				ptr->Value1 = pos;
+				*/
+				assert(false);
+			}
+			break;
+			case ECode::And: //0.3967273%
+			{
+				FStackVariable* rhs = evaluationStackPointer - 1;
+				FStackVariable* lhs = evaluationStackPointer - 1 - 1;
+				switch (lhs->Type)
+				{
+				case EVarType::Long:
+					*((long*)&lhs->Value1) = *((long*)&lhs->Value1) & *((long*)&rhs->Value1);
+					break;
+				case EVarType::Integer:
+					lhs->Value1 = lhs->Value1 & rhs->Value1;
+					break;
+				default:
+					throw new VMException("& for " + std::to_string((int)lhs->Type));
+				}
+				evaluationStackPointer = rhs;
+			}
+			break;
+			case ECode::Volatile: //0.3912123%
+				break;
+			case ECode::Castclass: //0.358122%
+			{
+				/*
+				var ptr = evaluationStackPointer - 1;
+				var type = pc->Operand >= 0 ? externTypes[pc->Operand] : typeof(AnonymousStorey);
+				var obj = managedStack[ptr->Value1];
+				if (obj != null)
+				{
+					bool canAssign = type.IsAssignableFrom(obj.GetType());
+					if (!canAssign)
+					{
+						throw new InvalidCastException(type + " is not assignable from "
+							+ obj.GetType());
+					}
+
+					if (canAssign && pc->Operand < 0 && (obj is AnonymousStorey) && (obj as AnonymousStorey).typeId != -(pc->Operand + 1))
+					{
+						var fromInfo = anonymousStoreyInfos[(obj as AnonymousStorey).typeId];
+						var targetInfo = anonymousStoreyInfos[-(pc->Operand + 1)];
+
+						if (fromInfo.Slots != null && targetInfo.Slots != null && fromInfo.Slots.Length == targetInfo.Slots.Length)
+						{
+							for (int i = 0; i < fromInfo.Slots.Length; ++i)
+							{
+								if (fromInfo.Slots[i] != targetInfo.Slots[i])
+								{
+									canAssign = false;
+									break;
+								}
+							}
+						}
+						else
+						{
+							canAssign = false;
+						}
+
+						if (!canAssign)
+						{
+							throw new InvalidCastException("AnonymousStorey typeid different, " + (obj as AnonymousStorey).typeId + " <-> " + -(pc->Operand + 1));
+						}
+					}
+				}
+				*/
+				assert(false);
+			}
+			break;
+			case ECode::Beq://Beq_S:0.3517174% Beq: 0.03700416%
+			{
+				FStackVariable* b = evaluationStackPointer - 1;
+				FStackVariable* a = evaluationStackPointer - 1 - 1;
+				evaluationStackPointer = a;
+				if (a->Type == b->Type && ((a->Type == EVarType::Object
+					|| a->Type == EVarType::ValueType) ?
+					(managedStack[a->Value1] == managedStack[b->Value1]) :
+					((a->Value1 == b->Value1) && (a->Type == EVarType::Integer
+						|| a->Type == EVarType::Float || a->Value2 == b->Value2))))
+				{
+					pc += pc->Operand;
+					continue;
+				}
+			}
+			break;
+			case ECode::Ldelem_Ref: //0.3449571%
+			{
+				FStackVariable* arrPtr = evaluationStackPointer - 1 - 1;
+				int idx = (evaluationStackPointer - 1)->Value1;
+				unsigned long long arrPos = arrPtr - evaluationStackBase;
+				void** arr = (void**)managedStack[arrPtr->Value1];
+				managedStack[arrPos] = arr[idx];
+				arrPtr->Value1 = (int)arrPos;
+				evaluationStackPointer = evaluationStackPointer - 1;
+			}
+			break;
+			case ECode::Ldtype:// Ldtoken:0.3325037%
+				/*
+				EvaluationStackOperation.PushObject(evaluationStackBase, evaluationStackPointer,
+					managedStack, externTypes[pc->Operand], typeof(Type));
+				evaluationStackPointer++;
+				*/
+				assert(false);
+				break;
+			case ECode::Box://0.3100877%
+			{
+				/*
+				var ptr = evaluationStackPointer - 1;
+				if (pc->Operand >= 0)
+				{
+					var type = externTypes[pc->Operand];
+					var pos = (int)(ptr - evaluationStackBase);
+					switch (ptr->Type)
+					{
+					case ValueType.ValueType:
+					case ValueType.Object:
+						break;
+					case ValueType.Integer:
+						if (type.IsEnum)
+						{
+							managedStack[pos] = Enum.ToObject(type, ptr->Value1);
+						}
+						else if (type == typeof(int))
+						{
+							managedStack[pos] = ptr->Value1;
+						}
+						else if (type == typeof(uint))
+						{
+							managedStack[pos] = (uint)ptr->Value1;
+						}
+						else
+						{
+							managedStack[pos] = Convert.ChangeType(ptr->Value1, type);
+						}
+						ptr->Value1 = pos;
+						break;
+					case ValueType.Long:
+						if (type == typeof(long))
+						{
+							managedStack[pos] = *(long*)&ptr->Value1;
+						}
+						else if (type == typeof(ulong))
+						{
+							managedStack[pos] = *(ulong*)&ptr->Value1;
+						}
+						else if (type.IsEnum)
+						{
+							managedStack[pos] = Enum.ToObject(type, *(long*)&ptr->Value1);
+						}
+						else if (type == typeof(IntPtr))
+						{
+							managedStack[pos] = new IntPtr(*(long*)&ptr->Value1);
+						}
+						else if (type == typeof(UIntPtr))
+						{
+							managedStack[pos] = new UIntPtr(*(ulong*)&ptr->Value1);
+						}
+						else
+						{
+							managedStack[pos] = Convert.ChangeType(*(long*)&ptr->Value1, type);
+						}
+						ptr->Value1 = pos;
+						break;
+					case ValueType.Float:
+						managedStack[pos] = *(float*)&ptr->Value1;
+						ptr->Value1 = pos;
+						break;
+					case ValueType.Double:
+						managedStack[pos] = *(double*)&ptr->Value1;
+						ptr->Value1 = pos;
+						break;
+					default:
+						throwRuntimeException(new InvalidProgramException("to box a " + ptr->Type),
+							true);
+						break;
+					}
+				}
+				ptr->Type = ValueType.Object;
+				*/
+			}
+			break;
+			case ECode::Isinst://0.3074192%
+			{
+				/*
+				var ptr = evaluationStackPointer - 1;
+				var type = pc->Operand >= 0 ? externTypes[pc->Operand] : typeof(AnonymousStorey);
+				var pos = (int)(ptr - evaluationStackBase);
+				var obj = managedStack[ptr->Value1];
+				ptr->Type = ValueType.Object;
+				ptr->Value1 = pos; if (obj == null)
+				{
+					managedStack[pos] = null;
+				}
+				else
+				{
+					bool canAssign = type.IsAssignableFrom(obj.GetType());
+					managedStack[pos] = canAssign
+						? obj : null;
+					if (pc->Operand < 0 && canAssign)
+					{
+						if ((obj is AnonymousStorey) && (obj as AnonymousStorey).typeId != -(pc->Operand + 1))
+						{
+							var fromInfo = anonymousStoreyInfos[(obj as AnonymousStorey).typeId];
+							var targetInfo = anonymousStoreyInfos[-(pc->Operand + 1)];
+
+							if (fromInfo.Slots != null && targetInfo.Slots != null && fromInfo.Slots.Length == targetInfo.Slots.Length)
+							{
+								for (int i = 0; i < fromInfo.Slots.Length; ++i)
+								{
+									if (fromInfo.Slots[i] != targetInfo.Slots[i])
+									{
+										canAssign = false;
+										break;
+									}
+								}
+							}
+							else
+							{
+								canAssign = false;
+							}
+
+							if (!canAssign)
+							{
+								managedStack[pos] = null;
+							}
+						}
+					}
+				}
+			}
+			*/
+			}
+			assert(false);
+			break;
+			case ECode::Bge: //Bge_S:0.2954996% Bge:0.005870852%
+			{
+				FStackVariable* b = evaluationStackPointer - 1;
+				FStackVariable* a = evaluationStackPointer - 1 - 1;
+				evaluationStackPointer = a;
+				bool transfer = FStackVariable::GreaterEqual(evaluationStackPointer->Type, a, b);
+				if (transfer)
+				{
+					pc += pc->Operand;
+					continue;
+				}
+			}
+			break;
+			case ECode::Conv_I8: //0.2652557%
+			{
+				FStackVariable* obj = evaluationStackPointer - 1;
+				FStackVariable::ConvI8(&obj, &pc);
+			}
+			break;
 			case ECode::Ble://Ble_S:0.2581396%  Ble:0.0152998%
 			{
 				FStackVariable* b = evaluationStackPointer - 1;
@@ -220,6 +512,63 @@ namespace ILVM
 					pc += pc->Operand;
 					continue;
 				}
+			}
+			break;
+			case ECode::Endfinally: //0.2513792%
+			{
+				/*
+				if (leavePoint == 0)//有异常
+				{
+					int exceptionPos = (int)(evaluationStackPointer - evaluationStackBase - 1);
+					var exception = managedStack[(evaluationStackPointer - 1)->Value1]
+						as Exception;
+					managedStack[exceptionPos] = null;
+					evaluationStackPointer--;
+					throw exception;
+				}
+				else
+				{
+					if (pc->Operand == -1) //最外层
+					{
+						pc = pcb + leavePoint;
+						leavePoint = 0;
+						continue;
+					}
+					else //不是最外层
+					{
+						var nextFinally = exceptionHandlers[methodIndex][pc->Operand];
+						if (leavePoint >= nextFinally.TryStart && leavePoint < nextFinally.TryEnd)
+						{
+							pc = pcb + leavePoint;
+							leavePoint = 0;
+							continue;
+						}
+						else
+						{
+							pc = pcb + nextFinally.HandlerStart;
+							continue;
+						}
+					}
+				}
+				*/
+				assert(false);
+			}
+			case ECode::Or: //0.2490664%
+			{
+				FStackVariable* rhs = evaluationStackPointer - 1;
+				FStackVariable* lhs = evaluationStackPointer - 1 - 1;
+				switch (lhs->Type)
+				{
+				case EVarType::Long:
+					*((long*)&lhs->Value1) = *((long*)&lhs->Value1) | *((long*)&rhs->Value1);
+					break;
+				case EVarType::Integer:
+					lhs->Value1 = lhs->Value1 | rhs->Value1;
+					break;
+				default:
+					throw new VMException("| for " + std::to_string((int)lhs->Type));
+				}
+				evaluationStackPointer = rhs;
 			}
 			break;
 			case ECode::Rem: //0.04714472%
