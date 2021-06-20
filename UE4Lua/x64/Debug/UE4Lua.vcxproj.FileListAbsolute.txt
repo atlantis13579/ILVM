@@ -1,2 +1,0 @@
-H:\src\ILVM\UE4Lua\x64\Debug\UE4Lua.exe
-H:\src\ILVM\UE4Lua\x64\Debug\UE4Lua.pdb
