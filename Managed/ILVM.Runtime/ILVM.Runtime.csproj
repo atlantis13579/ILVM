@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <Compile Include="../../UE5Jit/ExecutorVM.cs" />
+    <Compile Include="../../UE5Jit/InjectFix/Src/Core/*.cs" />
+    <Compile Include="../../UE5Jit/InjectFix/Src/Tools/*.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

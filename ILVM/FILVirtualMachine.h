@@ -486,7 +486,7 @@ namespace ILVM
 			*dst = *src;
 			if (dst->Type >= EVarType::Object)
 			{
-				auto obj = (dst->Type == EVarType::ValueType && managedStack[src->Value1] != nullptr) //Nullable box后可能为空
+				auto obj = (dst->Type == EVarType::ValueType && managedStack[src->Value1] != nullptr) //A boxed Nullable value may be null.
 					? CloneObject(managedStack[src->Value1])
 					: managedStack[src->Value1];
 				auto dstPos = dst->Value1 = (int)(dst - stackBase);
@@ -503,7 +503,7 @@ namespace ILVM
 			if (dst->Type == EVarType::ValueType)
 			{
 				FManagedObject obj = nullptr;
-				if (managedStack[src->Value1] != nullptr) //Nullable box后可能为空
+				if (managedStack[src->Value1] != nullptr) //A boxed Nullable value may be null.
 				{
 					obj = CloneObject(managedStack[src->Value1]);
 				}

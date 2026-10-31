@@ -1,0 +1,13 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0.0",
+  "FriendlyName": "ILVM C# Hot Update",
+  "Description": "Runs C# hotfix method bodies with the ILVM software IL interpreter.",
+  "Category": "Scripting",
+  "CanContainContent": false,
+  "SupportedTargetPlatforms": ["Win64"],
+  "Modules": [
+    { "Name": "ILVM", "Type": "Runtime", "LoadingPhase": "Default", "PlatformAllowList": ["Win64"] }
+  ]
+}

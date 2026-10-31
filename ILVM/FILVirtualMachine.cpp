@@ -27,11 +27,11 @@ namespace ILVM
 		FStackVariable* evaluationStackBase, int argsCount, Instruction **methodTable,
 		int refCount, FStackVariable** topWriteBack)
 	{
-		if (pc->Code != ECode::StackSpace) //TODO:删了pc会慢，但手机可能会快
+		if (pc->Code != ECode::StackSpace) //TODO: Removing this check may slow desktop builds but speed up mobile builds.
 		{
 			return nullptr;
 		}
-		int leavePoint = 0; //由于首指令是插入的StackSpace，所以leavePoint不可能等于0
+		int leavePoint = 0; //The first instruction is an inserted StackSpace, so leavePoint cannot be zero.
 		int localsCount = (pc->Operand >> 16);
 		int maxStack = (pc->Operand & 0xFFFF);
 		
@@ -49,7 +49,7 @@ namespace ILVM
 		// VMExecute ^a = gcnew VMExecute();
 		// int sum = a->demoAdd(2, 3);
 
-		while (true) //TODO: 常用指令应该放前面
+		while (true) //TODO: Put frequently used instructions first.
 		{
 			ECode code = pc->Code;
 			switch (code)
@@ -70,7 +70,7 @@ namespace ILVM
 					methodTable);
 			}
 			break;
-			case ECode::CallExtern://部分来自Call部分来自Callvirt
+			case ECode::CallExtern://Some calls originate from Call and others from Callvirt.
 			case ECode::Newobj: // 2.334642%
 				assert(false);
 				/*
@@ -153,7 +153,7 @@ namespace ILVM
 					managedStack = managedStack,
 					evaluationStackBase = evaluationStackBase
 				};
-				//调用外部前，需要保存当前top，以免外部从新进入内部时覆盖栈
+				//Save the current top before an external call so reentry cannot overwrite the stack.
 				ThreadStackInfo.Stack.UnmanagedStack->Top = evaluationStackPointer;
 				externInvokeFunc(this, ref call, code == Code.Newobj);
 				evaluationStackPointer = call.currentTop;
@@ -180,7 +180,7 @@ namespace ILVM
 			break;
 			case ECode::Ldc_I4:
 			{
-				evaluationStackPointer->Value1 = pc->Operand; //高位不清除
+				evaluationStackPointer->Value1 = pc->Operand; //The upper bits are not cleared.
 				evaluationStackPointer->Type = EVarType::Integer;
 				evaluationStackPointer++;
 			}
@@ -517,7 +517,7 @@ namespace ILVM
 			case ECode::Endfinally: //0.2513792%
 			{
 				/*
-				if (leavePoint == 0)//有异常
+				if (leavePoint == 0)//An exception occurred.
 				{
 					int exceptionPos = (int)(evaluationStackPointer - evaluationStackBase - 1);
 					var exception = managedStack[(evaluationStackPointer - 1)->Value1]
@@ -528,13 +528,13 @@ namespace ILVM
 				}
 				else
 				{
-					if (pc->Operand == -1) //最外层
+					if (pc->Operand == -1) //Outermost level.
 					{
 						pc = pcb + leavePoint;
 						leavePoint = 0;
 						continue;
 					}
-					else //不是最外层
+					else //Not the outermost level.
 					{
 						var nextFinally = exceptionHandlers[methodIndex][pc->Operand];
 						if (leavePoint >= nextFinally.TryStart && leavePoint < nextFinally.TryEnd)
@@ -601,9 +601,9 @@ namespace ILVM
 				}
 			}
 			break;
-			case ECode::Ret:// 5.5% TODO: 分为带返回值和不带返回值
+			case ECode::Ret:// 5.5%. TODO: Split returns with and without a value.
 			{
-				//TODO: 可优化? 检查到没都是基本类型后改指令
+				//TODO: Optimize this after checking whether all values are primitive types.
 
 				if (topWriteBack != nullptr)
 				{

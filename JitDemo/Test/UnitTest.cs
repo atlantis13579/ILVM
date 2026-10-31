@@ -24,21 +24,21 @@ namespace IFix.Test
             {
                 return;
             }
-            if (expected.ToString() == actual.ToString())
+            if (expected != null && actual != null && expected.ToString() == actual.ToString())
             {
                 return;
             }
-            System.Diagnostics.Debug.Assert(false);
+            throw new InvalidOperationException("Expected " + expected + ", actual " + actual);
         }
 
         public static void True(bool value)
         {
-            System.Diagnostics.Debug.Assert(value);
+            if (!value) throw new InvalidOperationException("Expected true.");
         }
 
         public static void False(bool value)
         {
-            System.Diagnostics.Debug.Assert(!value);
+            if (value) throw new InvalidOperationException("Expected false.");
         }
     }
 
@@ -100,7 +100,7 @@ namespace IFix.Test
 
         static public void RefBase()
         {
-            //几个典型基础值类型的引用类型测试
+            //Tests for references to common primitive value types.
             int a1 = 2;
             long b1 = 5;
             int c1 = 1;
@@ -116,7 +116,7 @@ namespace IFix.Test
             Assertion.AreEqual(c1, c2);
             Assertion.AreEqual(r1, r2);
 
-            //对象的引用测试
+            //Tests for object references.
             object o1 = new object();
             object o2 = new object();
 
@@ -126,7 +126,7 @@ namespace IFix.Test
             Assertion.True(ReferenceEquals(o1, p2));
             Assertion.True(ReferenceEquals(o2, p1));
 
-            //结构体的引用测试
+            //Tests for struct references.
             Redirect.ValueTypeCounter v1 = new Redirect.ValueTypeCounter(1);
             Redirect.ValueTypeCounter v2 = new Redirect.ValueTypeCounter(2);
 
@@ -148,7 +148,7 @@ namespace IFix.Test
         {
             //BaseTest.ExceptionBase(1);
             //BaseTest.ExceptionBase(-1);
-            //之所以要进行MAX_EVALUATION_STACK_SIZE次测试，是测试有漏清理栈对象
+            //Run MAX_EVALUATION_STACK_SIZE iterations to detect stack objects that were not cleared.
             for (int j = 2; j < 10240 + 2; j++)
             {
                 int tmp1 = j;
@@ -160,7 +160,7 @@ namespace IFix.Test
                 Assertion.AreEqual(tmp1, tmp2);
             }
 
-            //基础异常流程测试
+            //Basic exception-flow tests.
             // int i1 = -1, i2 = -1;
             // Assertion.That(() => BaseTest.ExceptionBase(ref i1), Throws.ArgumentException);
             // Assertion.That(() => Redirect.BaseTest.ExceptionBase(ref i2), Throws.ArgumentException);
@@ -177,7 +177,7 @@ namespace IFix.Test
             // Assertion.Throws<InvalidOperationException>(() => Redirect.BaseTest.Rethrow());
         }
 
-        //各种异常跳出点的测试
+        //Tests for different exception exit points.
 
         static public void LeavePoint()
         {
@@ -211,7 +211,7 @@ namespace IFix.Test
             Assertion.AreEqual(c1, c2);
         }
 
-        //finally逻辑的测试
+        //Tests for finally behavior.
 
         static public void TryCatchFinally()
         {
@@ -241,7 +241,7 @@ namespace IFix.Test
             //BaseTest.ConstrainedInstruction(true, 1);
         }
 
-        //try-catch嵌套测试
+        //Nested try/catch tests.
 
         static public void CatchByNextLevel()
         {
@@ -265,13 +265,13 @@ namespace IFix.Test
         //    }
         //}
 
-        //class基础测试
+        //Basic class tests.
 
         static public void ClassBase()
         {
             Redirect.RefTypeCounter rtc = new Redirect.RefTypeCounter();
             int c = rtc.Val;
-            rtc.Inc();//TODO: 反射访问字段非常慢
+            rtc.Inc();//TODO: Reflective field access is very slow.
             Assertion.AreEqual(rtc.Val, c + 1);
             //var MemberwiseClone = typeof(object).GetMethod("MemberwiseClone",
             //    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -291,7 +291,7 @@ namespace IFix.Test
             //Console.WriteLine("Took {0:0.00}s", sw.Elapsed.TotalSeconds);
         }
 
-        //结构体基础测试
+        //Basic struct tests.
 
         static public void StructBase()
         {
@@ -301,7 +301,7 @@ namespace IFix.Test
             Assertion.AreEqual(vtc.Val, c + 1);
         }
 
-        //参数值传递测试
+        //Pass-by-value parameter tests.
 
         static public void PassByValue()
         {
@@ -313,7 +313,7 @@ namespace IFix.Test
             Assertion.AreEqual(1, c1.Val);
         }
 
-        //虚函数测试
+        //Virtual-method tests.
 
         static public void VirtualFunc()
         {
@@ -327,14 +327,14 @@ namespace IFix.Test
             Assertion.AreEqual(1, o2.Foo());
         }
 
-        //接口测试
+        //Interface tests.
 
         static public void InterfaceTest()
         {
             Assertion.AreEqual(30, Redirect.BaseTest.InterfaceTest(1, 2, 10));
         }
 
-        //结构体虚函数测试
+        //Struct virtual-method tests.
 
         static public void VirtualFuncOfStruct()
         {
@@ -346,7 +346,7 @@ namespace IFix.Test
             Assertion.AreEqual(c1.ToString() + ",hashcode:" + c1.GetHashCode(), Redirect.BaseTest.VirtualFuncOfStruct(c1));
         }
 
-        //带ref参数的interface测试
+        //Interface tests with ref parameters.
 
         static public void ItfWithRefParam()
         {
@@ -359,14 +359,14 @@ namespace IFix.Test
             Assertion.AreEqual(20, ret);
         }
 
-        //ldtoken指令的测试
+        //Tests for the ldtoken instruction.
 
         static public void LdTokenBase()
         {
             Assertion.AreEqual(typeof(int), Redirect.BaseTest.GetIntType());
         }
 
-        //unbox指令测试
+        //Tests for the unbox instruction.
 
         static public void UnboxBase()
         {
@@ -382,7 +382,7 @@ namespace IFix.Test
             // Assertion.That(() => c1.CompareTo(1), Throws.ArgumentException);
         }
 
-        //泛型签名测试
+        //Generic signature tests.
 
         static public void GenericOverload()
         {
@@ -390,7 +390,7 @@ namespace IFix.Test
             //Console.WriteLine(Redirect.BaseTest.GenericOverload());
         }
 
-        //静态字段测试
+        //Static-field tests.
 
         static public void StaticFieldBase()
         {
@@ -400,7 +400,7 @@ namespace IFix.Test
             }
         }
 
-        //ConvI4指令
+        //The ConvI4 instruction.
 
         static public void ConvI4Base()
         {
@@ -414,7 +414,7 @@ namespace IFix.Test
             // Assertion.Throws<OverflowException>(() => Redirect.BaseTest.Conv_Ovf_I4(long.MaxValue));
         }
 
-        //LdLen指令
+        //The LdLen instruction.
 
         static public void LdLen()
         {
@@ -424,7 +424,7 @@ namespace IFix.Test
             }
         }
 
-        //Newarr指令
+        //The Newarr instruction.
 
         static public void Newarr()
         {
@@ -434,7 +434,7 @@ namespace IFix.Test
             }
         }
 
-        //Isinst，Castclass指令
+        //The Isinst and Castclass instructions.
 
         static public void Cast()
         {
@@ -443,7 +443,7 @@ namespace IFix.Test
             // Assertion.Throws<InvalidCastException>(() => Redirect.BaseTest.Castclass(bc));
         }
 
-        //数组测试
+        //Array tests.
 
         static public void Array()
         {
@@ -566,7 +566,7 @@ namespace IFix.Test
             Assertion.AreEqual((ulong)2, Redirect.BaseTest.ArrayGet(uintPtrArr, 1).ToUInt64());
         }
 
-        //逻辑操作符
+        //Logical operator tests.
 
         static public void LogicalOperator()
         {
@@ -578,7 +578,7 @@ namespace IFix.Test
             Assertion.AreEqual(c | d, Redirect.BaseTest.Or(c, d));
         }
 
-        //Ldflda指令
+        //The Ldflda instruction.
 
         static public void Ldflda()
         {
@@ -625,7 +625,7 @@ namespace IFix.Test
             Assertion.AreEqual(10, Redirect.BaseTest.Ldflda_m(ref w3));
         }
 
-        //Conv_Ovf_I指令
+        //The Conv_Ovf_I instruction.
 
         static public void Conv_Ovf_I()
         {
@@ -633,7 +633,7 @@ namespace IFix.Test
             Assertion.AreEqual(i, Redirect.BaseTest.Conv_Ovf_I(i).Length);
         }
 
-        //Ceq指令
+        //The Ceq instruction.
 
         static public void Ceq()
         {
@@ -643,7 +643,7 @@ namespace IFix.Test
             Assertion.False(Redirect.BaseTest.Ceq((double)321, 1));
         }
 
-        //位操作符
+        //Bitwise operator tests.
 
         static public void BitsOp()
         {
@@ -666,7 +666,7 @@ namespace IFix.Test
             Assertion.AreEqual(~b, Redirect.BaseTest.Not(b));
         }
 
-        //Conv_U1指令
+        //The Conv_U1 instruction.
 
         static public void Conv_U1()
         {
@@ -709,7 +709,7 @@ namespace IFix.Test
             Assertion.AreEqual(BaseTest.Initobj(42), Redirect.BaseTest.Initobj(42));
         }
 
-        //数学运算测试，checked关键字测试
+        //Arithmetic and checked-operation tests.
 
         static public void Arithmetic()
         {
@@ -735,7 +735,7 @@ namespace IFix.Test
             Assertion.AreEqual(-a3, Redirect.BaseTest.Neg(a3));
         }
 
-        //Nan运算
+        //NaN arithmetic.
 
         static public void NaNFloat()
         {
@@ -780,7 +780,7 @@ namespace IFix.Test
             Assertion.AreEqual(BaseTest.Ldc_I8(), Redirect.BaseTest.Ldc_I8());
         }
 
-        //64位测试
+        //64-bit tests.
 
         static public void Int64()
         {

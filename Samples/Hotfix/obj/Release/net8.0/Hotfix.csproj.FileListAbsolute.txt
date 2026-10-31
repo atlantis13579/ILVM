@@ -1,0 +1,12 @@
+F:\src\ILVM\Samples\Hotfix\bin\Release\net8.0\Game.Hotfix.deps.json
+F:\src\ILVM\Samples\Hotfix\bin\Release\net8.0\Game.Hotfix.dll
+F:\src\ILVM\Samples\Hotfix\bin\Release\net8.0\Game.Hotfix.pdb
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Hotfix.GeneratedMSBuildEditorConfig.editorconfig
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Hotfix.AssemblyInfoInputs.cache
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Hotfix.AssemblyInfo.cs
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Hotfix.csproj.CoreCompileInputs.cache
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Hotfix.sourcelink.json
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Game.Hotfix.dll
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\refint\Game.Hotfix.dll
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\Game.Hotfix.pdb
+F:\src\ILVM\Samples\Hotfix\obj\Release\net8.0\ref\Game.Hotfix.dll

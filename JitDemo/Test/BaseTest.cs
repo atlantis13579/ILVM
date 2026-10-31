@@ -154,11 +154,11 @@ namespace IFix.Test
             return "6";
         }
 
-        //TODO: 泛型+引用及数组
+        //TODO: Generics with references and arrays.
 
-        //TODO: 泛型实参同时含函数泛型参数及类泛型参数
+        //TODO: Generic arguments containing both method and type parameters.
 
-        //TODO: 由于目前泛型函数不解析执行，所以泛型实参在泛型函数间传递不用考虑，但后续如果要支持泛型函数的解析执行的话，要加入这点的考虑
+        //TODO: Generic methods are not interpreted yet, so generic arguments passed between them need no handling; revisit this when generic methods are supported.
 
         //public void F<T4>(List<T4> a)
         //{
@@ -444,14 +444,14 @@ namespace IFix.Test
             r = t;
         }
 
-        //1、leave的目标不一定紧跟finally block，可以是任何地方
-        //2、leave要找到最内层的finally跳转
-        //3、endfinally有两种情况，如果是leave跳过来，则跳到leave的目标，如果不是，则重新抛异常
-        //4、为了减少注入代码注入侧不try-catch，由解析器清栈，包括引用参数，所以要传入引用参数的个数
-        //5、正常leave不应该有查找finally的操作，否则非常慢
-        //6、一个finally block里头的leave指令，可以有不同的目标地址，比如：try{}catch{goto}
-        //7、leave如果在一个finally block内，而目标地址在finally的try block之外，那么这个finally block在跳转前执行，
-        //   如果有多个这样的finally，则从内到外执行（抛异常其实也可以理解为跳出了finally）
+        //1. A leave target can be anywhere, not necessarily immediately after a finally block.
+        //2. A leave must jump to the innermost finally block.
+        //3. Endfinally resumes the leave target or rethrows an exception, depending on how it was reached.
+        //4. The interpreter clears the stack, including by-ref arguments, to avoid try/catch in injected code; pass the number of by-ref arguments.
+        //5. An ordinary leave should not search for finally blocks because that is slow.
+        //6. A finally block can contain leave instructions with different targets, such as try/catch with goto.
+        //7. If leave exits the try block associated with a finally block, run that finally before branching.
+        //   If several finally blocks are exited, run them from innermost to outermost; throwing also exits them.
         public static void ExceptionBase(ref int p)
         {
             while (p != 100)

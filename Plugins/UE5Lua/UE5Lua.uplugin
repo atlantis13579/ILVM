@@ -1,0 +1,13 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0.0",
+  "FriendlyName": "UE5 Lua",
+  "Description": "Lua scripting with per-GameInstance state and script reload.",
+  "Category": "Scripting",
+  "CanContainContent": false,
+  "SupportedTargetPlatforms": ["Win64"],
+  "Modules": [
+    { "Name": "UE5Lua", "Type": "Runtime", "LoadingPhase": "Default", "PlatformAllowList": ["Win64"] }
+  ]
+}
