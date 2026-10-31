@@ -1,52 +1,52 @@
 # ILVM
 
-UE5 的 C# 热更新插件，保留原有 InjectFix/ILVM 软件解释器。当前接入目标为 **UE5 / Windows x64**，UE 接口按本机 UE **5.4.4** 源码核对。托管部分使用 **.NET 8**，Mono.Cecil 依赖由 NuGet 恢复。
+A C# hot update plugin for UE5 that preserves the original InjectFix/ILVM software interpreter. The current integration target is **UE5 / Windows x64**, and the UE interfaces were checked against the local UE **5.4.4** source. The managed part uses **.NET 8**, with the Mono.Cecil dependency restored from NuGet.
 
-调用链：`UE5 GameInstanceSubsystem → C++ hostfxr 宿主 → ILVM.Runtime → IL 翻译器 → C# 软件解释器`。
+Call chain: `UE5 GameInstanceSubsystem → C++ hostfxr host → ILVM.Runtime → IL translator → C# software interpreter`.
 
-已完成独立托管测试和原生宿主测试；按项目约定，没有编译 UE5 工程，也没有进行编辑器 PIE 或打包运行验证。
+Standalone managed tests and native host tests are complete; per project conventions, the UE5 project was not compiled, and no editor PIE or packaged-run validation was performed.
 
-## 构建与测试
+## Building and testing
 
-环境：Windows x64、Visual Studio 2022（包含 C++ 工具链）、CMake、.NET SDK 8/9 和 .NET 8 x64 Runtime。`ILVM.sln` 是 VS2022 解决方案，包含 C# 工程和 `UE5Lua` 原生工程；原生工程使用 v143 工具集。
+Environment: Windows x64, Visual Studio 2022 (including the C++ toolchain), CMake, .NET SDK 8/9, and .NET 8 x64 Runtime. `ILVM.sln` is the VS2022 solution containing the C# projects and the `UE5Lua` native project; the native project uses the v143 toolset.
 
-在仓库根目录运行：
+Run from the repository root:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-脚本通过 VS2022 MSBuild 构建 `ILVM.sln`，再构建 `UE5Lua` 静态库并执行 C#、Lua 和原生宿主回归。托管依赖发布到 `Plugins/ILVM/Binaries/Managed`，Lua 静态库发布到 `Plugins/UE5Lua/Source/ThirdParty`。脚本**不会调用 UnrealBuildTool 或编译 UE5**。使用 `-Configuration Debug` 可验证 Debug；只准备插件依赖可使用 `-SkipTests`。
+The script builds `ILVM.sln` with VS2022 MSBuild, then builds the `UE5Lua` static library and runs the C#, Lua, and native host regressions. Managed dependencies are published to `Plugins/ILVM/Binaries/Managed`, and the Lua static library to `Plugins/UE5Lua/Source/ThirdParty`. The script **does not invoke UnrealBuildTool or build UE5**. Use `-Configuration Debug` to validate Debug; use `-SkipTests` to only prepare plugin dependencies.
 
-可把当前机器上的 .NET 8 运行时一起放入插件，避免目标机器单独安装：
+You can also bundle the .NET 8 runtime from the current machine into the plugin so target machines do not need a separate install:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -BundleRuntime
 ```
 
-运行时存放于 `Plugins/ILVM/Binaries/DotNet`。`-DotNetRoot` 可指定 x64 dotnet 安装路径；`-CMakeGenerator` 可指定已安装的 Visual Studio CMake 生成器。生成的二进制和测试产物不加入 Git。
+The runtime is stored in `Plugins/ILVM/Binaries/DotNet`. `-DotNetRoot` specifies the x64 dotnet install path; `-CMakeGenerator` specifies an installed Visual Studio CMake generator. Generated binaries and test artifacts are not added to Git.
 
-单独验证托管解释器：
+To validate the managed interpreter on its own:
 
 ```powershell
 dotnet run --project Tests/ILVM.Tests -c Release
 dotnet run --project JitDemo -c Release
 ```
 
-默认演示输出 `Game.Hotfix.Entry::Add = 5`，无需原来的 Mono 安装、`ILVM.dll`、调试符号或固定工作目录。指定程序集和方法：
+The default demo prints `Game.Hotfix.Entry::Add = 5` and requires no original Mono installation, `ILVM.dll`, debug symbols, or fixed working directory. To specify the assembly and method:
 
 ```powershell
 dotnet run --project JitDemo -c Release -- Samples/Hotfix/bin/Release/net8.0/Game.Hotfix.dll Game.Hotfix.Entry::Add '[3,2]'
 ```
 
-## 接入 UE5
+## Integrating with UE5
 
-1. 执行上述构建脚本，将完整的 `Plugins/ILVM` 目录复制到游戏工程的 `Plugins/ILVM`，包括生成的 `Binaries/Managed` 和可选的 `Binaries/DotNet`。
-2. 在 `.uproject` 的 `Plugins` 数组中启用 `{ "Name": "ILVM", "Enabled": true }`。如果从 C++ 调用，在游戏模块的 `Build.cs` 依赖中添加 `ILVM`。
-3. 构建 `Samples/Hotfix/Hotfix.csproj`，将生成的 `Game.Hotfix.dll` 放入游戏的 `Content/Hotfix`。
-4. 蓝图中获取 `ILVMSubsystem` Game Instance Subsystem，调用 `LoadHotfix("Game.Hotfix.dll")`，再调用 `ExecuteInt("Game.Hotfix.Entry::Add", [3, 2])`。预期结果为 `5`。节点返回 `false` 时读取 `Error`。
+1. Run the build script above and copy the full `Plugins/ILVM` directory to your game project's `Plugins/ILVM`, including the generated `Binaries/Managed` and the optional `Binaries/DotNet`.
+2. Enable `{ "Name": "ILVM", "Enabled": true }` in the `Plugins` array of the `.uproject`. If calling from C++, add `ILVM` to your game module's `Build.cs` dependencies.
+3. Build `Samples/Hotfix/Hotfix.csproj` and place the generated `Game.Hotfix.dll` into the game's `Content/Hotfix`.
+4. In Blueprint, get the `ILVMSubsystem` Game Instance Subsystem, call `LoadHotfix("Game.Hotfix.dll")`, then call `ExecuteInt("Game.Hotfix.Entry::Add", [3, 2])`. The expected result is `5`. Read `Error` when a node returns `false`.
 
-C++ 调用示例：
+C++ call example:
 
 ```cpp
 #include "ILVMSubsystem.h"
@@ -61,66 +61,66 @@ if (VM->LoadHotfix(TEXT("Game.Hotfix.dll"), Error))
 }
 ```
 
-插件的托管依赖和可选运行时通过 `RuntimeDependencies` 作为 NonUFS 文件打包。游戏的热更新 DLL 也必须是磁盘上的普通文件，在 `Config/DefaultGame.ini` 中加入：
+The plugin's managed dependencies and optional runtime are packaged as NonUFS files through `RuntimeDependencies`. The game's hot update DLL must also be a plain file on disk; add the following to `Config/DefaultGame.ini`:
 
 ```ini
 [/Script/UnrealEd.ProjectPackagingSettings]
 +DirectoriesToAlwaysStageAsNonUFS=(Path="Hotfix")
 ```
 
-更新时将新 DLL 写入可访问位置，再次调用 `LoadHotfix` 即可。路径可以是绝对路径，或相对 `Content/Hotfix` 的路径。同名同版本程序集也可以替换；加载失败保留当前 VM，加载成功创建全新的脚本状态。**旧对象、旧委托和静态字段不会迁移到新版本**。停止使用旧回调后，旧程序集可被 GC 回收。
+To update, write the new DLL to an accessible location and call `LoadHotfix` again. The path may be absolute or relative to `Content/Hotfix`. An assembly with the same name and version can also be replaced; if loading fails the current VM is retained, and if it succeeds a brand-new script state is created. **Old objects, old delegates, and static fields are not migrated to the new version.** Once the old callbacks are no longer used, the old assembly can be collected by the GC.
 
-宿主依次查找：插件自带 `Binaries/DotNet`、`ILVM_DOTNET_ROOT`、`DOTNET_ROOT_X64`、`DOTNET_ROOT`、`Program Files/dotnet`。所有 UE 调用在游戏线程执行；每个 GameInstance 有独立会话，结束时自动销毁。
+The host searches in order: the plugin's bundled `Binaries/DotNet`, `ILVM_DOTNET_ROOT`, `DOTNET_ROOT_X64`, `DOTNET_ROOT`, `Program Files/dotnet`. All UE calls execute on the game thread; each GameInstance has an independent session that is destroyed automatically when it ends.
 
-## 参数与返回值
+## Parameters and return values
 
-`ExecuteInt` 适用于 int32 参数和返回值。通用蓝图节点 `Execute` 接受 JSON 参数数组，返回完整 JSON 响应，如 `{"ok":true,"result":5}`。
+`ExecuteInt` works with int32 parameters and return values. The generic Blueprint node `Execute` accepts a JSON parameter array and returns a full JSON response, e.g. `{"ok":true,"result":5}`.
 
-| 参数 | JSON 示例 |
+| Parameter | JSON example |
 | --- | --- |
-| int32、字符串、bool、null | `[3,"hello",true,null]` |
+| int32, string, bool, null | `[3,"hello",true,null]` |
 | float / double | `[{"type":"single","value":1.5},{"type":"double","value":2.0}]` |
-| 64 位整数 | `[{"type":"int64","value":"9007199254740993"}]` |
+| 64-bit integers | `[{"type":"int64","value":"9007199254740993"}]` |
 | uint32 / uint64 | `[{"type":"uint32","value":4294967295}]` |
-| int32 数组 | `[{"type":"int32[]","value":[1,2,3]}]` |
+| int32 array | `[{"type":"int32[]","value":[1,2,3]}]` |
 
-int64/uint64 返回值使用 `{"type":"int64","value":"..."}`，避免 UE JSON 的 double 数字表示损失精度。其他返回值需可被 JSON 序列化。跨原生边界暂不传递任意托管对象、指针、ref/out 参数；脚本内部的 ref/out 已纳入回归测试。
+int64/uint64 return values use `{"type":"int64","value":"..."}` to avoid precision loss from UE JSON's double number representation. Other return values must be JSON-serializable. Arbitrary managed objects, pointers, and ref/out parameters are not currently passed across the native boundary; ref/out inside scripts is covered by regression tests.
 
-存在重载时使用 Cecil 完整签名，例如 `System.Int32 Game.Hotfix.Entry::Overload(System.Int32)`；仅用短名称会报歧义错误。托管 `ExecutorVM.MethodNames` 或原生协议的 `describe` 操作可以查看可调用签名。
+When overloads exist, use the full Cecil signature, e.g. `System.Int32 Game.Hotfix.Entry::Overload(System.Int32)`; using the short name alone reports an ambiguity error. Callable signatures can be inspected via managed `ExecutorVM.MethodNames` or the native protocol's `describe` operation.
 
-## 解释执行范围
+## Interpretation scope
 
-- 热更新入口及可翻译的方法体由软件解释器执行；递归、虚调用、反射入口和委托通过生成的包装方法回到解释器。
-- CLR 提供对象、GC、基础库和互操作。构造函数、开放泛型方法及外部库仍通过 CLR 执行，因此本插件不是完整的独立 CLR，也不提供无 JIT / AOT 平台支持。
-- 示例固定 C# 7.3 语言版本，避免新编译器语法引入未经验证的 IL。异步状态机、任意泛型热更新和全部 C# 语言特性不在当前验证范围。
-- 本仓库原先没有 UE 模块或 UObject 绑定生成器；新增插件提供蓝图/C++ 调用入口，尚未提供自动 UObject/UFUNCTION 的 C# 绑定。
-- `ILVM/` 中的 C++ IL 解释器仍是历史未完成原型，不参与新构建。C# 翻译器与软件解释器源码、命名空间已统一为 `UE5Jit`；Lua 源码与演示工程已统一为 `UE5Lua`。
+- Hot update entry points and translatable method bodies are executed by the software interpreter; recursion, virtual calls, reflection entry points, and delegates return to the interpreter through generated wrapper methods.
+- The CLR provides objects, GC, the base class library, and interop. Constructors, open generic methods, and external libraries still execute through the CLR, so this plugin is not a complete standalone CLR and does not provide JIT-free / AOT platform support.
+- The sample pins C# 7.3 to avoid new compiler syntax introducing unvalidated IL. Async state machines, arbitrary generic hot updates, and the full C# language feature set are outside the current validation scope.
+- This repository originally had no UE module or UObject binding generator; the new plugin provides Blueprint/C++ entry points but does not yet provide automatic UObject/UFUNCTION C# bindings.
+- The C++ IL interpreter under `ILVM/` remains a historical unfinished prototype and does not participate in the new build. The C# translator and software interpreter sources and namespaces have been unified under `UE5Jit`; Lua sources and the demo project have been unified under `UE5Lua`.
 
-## 验证内容
+## Validation
 
-- 原有 41 项测试全部通过：算术、64 位整数、浮点/NaN、数组、引用、结构体、接口、虚调用、异常/finally、闭包等；断言在 Release 下同样生效。
-- 新增验证覆盖不同参数/返回值、递归和回调确实进入解释器、重载选择、缺失方法、错误参数、连续异常后的栈恢复、坏 DLL 加载回滚、同名程序集反复替换和旧程序集回收。
-- 独立 C++ 测试复用插件的 `DotNetHost.cpp`，验证 C++ → hostfxr → 托管桥 → 解释器，以及 v1 → v2 热重载和会话销毁；可从仓库以外的工作目录执行。
-- UE API 静态检查参考 UE 5.4.4 源码。UE 模块编译、PIE、Shipping 打包和其他 UE5 版本仍需在目标工程验证。
+- All 41 original tests pass: arithmetic, 64-bit integers, floating point/NaN, arrays, references, structs, interfaces, virtual calls, exceptions/finally, closures, and more; assertions are also active in Release.
+- New validation covers different parameters/return values, recursion and callbacks actually entering the interpreter, overload selection, missing methods, bad arguments, stack recovery after consecutive exceptions, bad DLL load rollback, repeated replacement of same-named assemblies, and old assembly collection.
+- A standalone C++ test reuses the plugin's `DotNetHost.cpp` to validate C++ → hostfxr → managed bridge → interpreter, plus v1 → v2 hot reload and session destruction; it can run from a working directory outside the repository.
+- UE API static checks reference the UE 5.4.4 source. UE module compilation, PIE, Shipping packaging, and other UE5 versions still need validation in the target project.
 
-原生托管接口依据 [.NET 原生宿主文档](https://learn.microsoft.com/en-us/dotnet/core/tutorials/netcore-hosting)。第三方许可见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+The native hosting interface follows the [.NET native hosting documentation](https://learn.microsoft.com/en-us/dotnet/core/tutorials/netcore-hosting). Third-party licenses: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## UE5Lua
 
-`Plugins/UE5Lua` 是独立的 UE5 Win64 插件，不依赖 C# 插件或 .NET。复用仓库内的 Lua 5.4.3 源码和 `UE5Lua/ExecutorLua.cpp`，通过静态库接入。单独构建与验证：
+`Plugins/UE5Lua` is a standalone UE5 Win64 plugin that does not depend on the C# plugin or .NET. It reuses the in-repo Lua 5.4.3 sources and `UE5Lua/ExecutorLua.cpp`, integrated through a static library. To build and validate it separately:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build-lua.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build-lua.ps1 -Configuration Debug
 ```
 
-需要 CMake、Visual Studio 2022 C++ 工具链。脚本生成 `artifacts/lua/<配置>/UE5Lua.exe` 与静态库，并复制头文件、库和许可证到插件的 `Source/ThirdParty/UE5LuaRuntime`。UE 默认使用 Release 库；仅在 Debug 且 `bDebugBuildsActuallyUseDebugCRT=true` 时使用 Debug 库。旧 Visual Studio 工程也已改名为 `UE5Lua/UE5Lua.vcxproj`，更新为 v143 / C++17，可独立构建演示。
+CMake and the Visual Studio 2022 C++ toolchain are required. The script generates `artifacts/lua/<config>/UE5Lua.exe` and the static library, and copies headers, libs, and licenses to the plugin's `Source/ThirdParty/UE5LuaRuntime`. UE uses the Release library by default; the Debug library is used only in Debug when `bDebugBuildsActuallyUseDebugCRT=true`. The old Visual Studio project was also renamed to `UE5Lua/UE5Lua.vcxproj`, updated to v143 / C++17, and can build the demo independently.
 
-1. 构建 Release 后，将完整的 `Plugins/UE5Lua` 复制到游戏工程，包含生成的 `Source/ThirdParty`。在 `.uproject` 中启用 `{ "Name": "UE5Lua", "Enabled": true }`。
-2. 将 `UE5Lua/test.lua` 放入游戏的 `Content/Lua/test.lua`。
-3. 蓝图获取 `UE5LuaSubsystem` Game Instance Subsystem，调用 `LoadScript("test.lua")`，然后 `ExecuteInt("Add", [1, 2])`，预期返回 `3`。检查 bool 返回值和 `Error`。
+1. After building Release, copy the full `Plugins/UE5Lua` to the game project, including the generated `Source/ThirdParty`. Enable `{ "Name": "UE5Lua", "Enabled": true }` in the `.uproject`.
+2. Place `UE5Lua/test.lua` into the game's `Content/Lua/test.lua`.
+3. In Blueprint, get the `UE5LuaSubsystem` Game Instance Subsystem, call `LoadScript("test.lua")`, then `ExecuteInt("Add", [1, 2])`, which should return `3`. Check the bool return value and `Error`.
 
-从 C++ 调用时，在游戏模块依赖中添加 `UE5Lua`：
+When calling from C++, add `UE5Lua` to your game module dependencies:
 
 ```cpp
 #include "UE5LuaSubsystem.h"
@@ -135,15 +135,15 @@ if (Lua->LoadScript(TEXT("test.lua"), Error))
 }
 ```
 
-通用 `Execute` 节点通过 `FUE5LuaValue` 传递 nil、int64、double、bool 和字符串，返回第一个结果；表、函数和 userdata 暂不跨 UE 边界传递。`LoadSource` 可以直接执行源码字符串；`LoadScript` 支持绝对路径或相对 `Content/Lua` 的路径。`require` 优先搜索脚本目录的 `?.lua` 和 `?/init.lua`；Windows 下 Lua 自带文件接口使用系统窄字符路径，建议模块搜索目录使用 ASCII 路径。
+The generic `Execute` node passes nil, int64, double, bool, and strings via `FUE5LuaValue` and returns the first result; tables, functions, and userdata are not currently passed across the UE boundary. `LoadSource` can execute a source string directly; `LoadScript` accepts an absolute path or a path relative to `Content/Lua`. `require` searches the script directory's `?.lua` and `?/init.lua` first; on Windows, Lua's built-in file functions use the system narrow-character path, so ASCII paths are recommended for module search directories.
 
-重复加载会创建新的 Lua state，清空原来的全局变量和模块缓存；语法错误或初始化错误不会替换已有 state。每个 GameInstance 独立，调用限制在游戏线程；`UnloadScript` 或 GameInstance 结束时释放状态。不包含自动 UObject 绑定。
+Reloading creates a new Lua state, clearing previous globals and the module cache; syntax errors or initialization errors do not replace the existing state. Each GameInstance is independent, calls are restricted to the game thread, and the state is released by `UnloadScript` or when the GameInstance ends. Automatic UObject binding is not included.
 
-在 `Config/DefaultGame.ini` 中添加下面的打包项，以便运行时直接读取和替换脚本：
+Add the following packaging entry to `Config/DefaultGame.ini` so scripts can be read and replaced directly at runtime:
 
 ```ini
 [/Script/UnrealEd.ProjectPackagingSettings]
 +DirectoriesToAlwaysStageAsNonUFS=(Path="Lua")
 ```
 
-Lua 回归包括 16 组检查及 10,000 次错误恢复循环，Release/Debug 均运行；原有基准可通过 `artifacts/lua/Release/UE5Lua.exe UE5Lua/test.lua --benchmark` 执行。独立测试链接的静态库与 UE5 插件一致；UE5 模块只做源码接口核对，尚未编译、进行 PIE 或打包运行验证。Lua C API 依据 [Lua 5.4 官方手册](https://www.lua.org/manual/5.4/manual.html)。
+The Lua regression includes 16 groups of checks and 10,000 error recovery loops, run in both Release and Debug; the original benchmark can be run with `artifacts/lua/Release/UE5Lua.exe UE5Lua/test.lua --benchmark`. The standalone test links the same static library as the UE5 plugin; the UE5 module has only had its source interfaces checked and has not been compiled, run in PIE, or validated in a packaged build. The Lua C API follows the [Lua 5.4 reference manual](https://www.lua.org/manual/5.4/manual.html).
