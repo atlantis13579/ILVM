@@ -17,13 +17,6 @@ Call chain: `UE5 GameInstanceSubsystem → C++ hostfxr host → ILVM.Runtime →
 
 Reloading replaces the assembly with the same name and version and creates a brand-new script state. **Old objects, old delegates, and static fields are not migrated to the new version.** Once the old callbacks are no longer used, the old assembly can be collected by the GC. If loading fails, the current VM is retained.
 
-## Validation
-
-- All 41 original tests pass: arithmetic, 64-bit integers, floating point/NaN, arrays, references, structs, interfaces, virtual calls, exceptions/finally, closures, and more; assertions are also active in Release.
-- New validation covers different parameters/return values, recursion and callbacks actually entering the interpreter, overload selection, missing methods, bad arguments, stack recovery after consecutive exceptions, bad DLL load rollback, repeated replacement of same-named assemblies, and old assembly collection.
-- A standalone C++ test validates C++ → hostfxr → managed bridge → interpreter, plus v1 → v2 hot reload and session destruction.
-- UE API static checks reference the UE 5.4.4 source. UE module compilation, PIE, Shipping packaging, and other UE5 versions still need validation in the target project.
-
 The native hosting interface follows the [.NET native hosting documentation](https://learn.microsoft.com/en-us/dotnet/core/tutorials/netcore-hosting). Third-party licenses: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## UE5Lua
